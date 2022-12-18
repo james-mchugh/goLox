@@ -3,12 +3,10 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/james-mchugh/goLox/errorReporting"
+	"github.com/james-mchugh/goLox/scanner"
 	"os"
-	"strings"
-	"text/scanner"
 )
-
-//type logLevel = string
 
 func main() {
 
@@ -38,7 +36,13 @@ func runFile(filePath string) error {
 	if err != nil {
 		return err
 	}
-	return run(string(fileContents))
+
+	err = run(string(fileContents))
+
+	if errorReporting.ErrorOccurred() {
+		os.Exit(65)
+	}
+	return err
 }
 
 func runPrompt() error {
@@ -46,7 +50,7 @@ func runPrompt() error {
 	for {
 		_, _ = fmt.Fprintf(os.Stdout, "> ")
 		line, _, _ := reader.ReadLine()
-		if string(line) == "" {
+		if line == nil {
 			break
 		}
 		err := run(string(line))
@@ -60,22 +64,15 @@ func runPrompt() error {
 }
 
 func run(loxScript string) error {
-	reader := strings.NewReader(loxScript)
 	s := scanner.Scanner{}
 
-	s.Init(reader)
+	s.Init(loxScript)
 
-	for currentToken := s.Scan(); currentToken != scanner.EOF; currentToken = s.Scan() {
-		fmt.Printf("%s: %s\n", s.Pos(), s.TokenText())
+	tokens := s.ScanTokens()
+
+	for _, token := range tokens {
+		fmt.Printf("%s\n", token.ToString())
 	}
 
 	return nil
 }
-
-//func reportError(line int, message string) {
-//	report(line, "", message, "Error")
-//}
-//
-//func report(line int, s string, message string, level logLevel) {
-//	_, _ = fmt.Fprintf(os.Stderr, "[line %d] %s %s: %s\n", line, s, message, level)
-//}
